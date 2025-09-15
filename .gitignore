@@ -9,3 +9,9 @@ venv/
 
 # PyCharm
 .idea/
+
+# LaTeX/PDF
+*.aux
+*.log
+*.pdf
+*.synctex.gz

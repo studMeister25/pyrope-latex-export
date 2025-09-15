@@ -909,5 +909,28 @@ class CLIParser:
             metavar='filepath',
         )
 
+        generate_parser = subparsers.add_parser(
+            'generate',
+            help='start generating LaTeX from exercises'
+        )
+        generate_parser.add_argument(
+            'filepaths',
+            nargs='*',
+            type=str,
+            help='paths to python scripts with exercise definitions',
+            metavar='filepath',
+        )
+        generate_parser.add_argument(
+            '--path',
+            default=os.getcwd(),
+            help='location to store files'
+        )
+        generate_parser.add_argument(
+            '--debug',
+            default=False,
+            action='store_true',
+            help='enables debug mode for the frontend',
+        )
+
     def parse_args(self, args=None, namespace=None):
         return self._parser.parse_args(args=args, namespace=namespace)

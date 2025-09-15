@@ -1,0 +1,50 @@
+{
+    "exercise": "<examples.SumEqualsProduct object at 0x7d067142fb30>",
+    "global_parameters": {
+        "min_difficulty": 0.0,
+        "max_difficulty": 1.0,
+        "user_name": "John Doe"
+    },
+    "_total_score": "None",
+    "_max_total_score": 1.0,
+    "user_name": "John Doe",
+    "started_at": "None",
+    "submitted_at": "None",
+    "parameters": {},
+    "model": "<pyrope.nodes.dtype_nodes.Problem ID='4a47d06e-4fee-4602-ba8b-b2b92232c18f'>",
+    "widgets": "<pyrope.nodes.widgets.Text ID='e53935f0-02ce-4276-b5bb-c11dbeac906c'>",
+    "source": "class SumEqualsProduct(Exercise):\n\n    def preamble(self):\n        return r'You know that $2 + 2 = 2 \\times 2$.'\n\n    def problem(self):\n        return Problem(\n            '''\n            Find a set of three different integers whose sum is equal to their\n            product.\n\n            <<numbers>>\n            ''',\n            numbers=Set(count=3)\n        )\n\n    def a_solution(self):\n        return {1, 2, 3}\n\n    def scores(self, numbers):\n        return sum(numbers) == math.prod(numbers)\n",
+    "id": "764675bf57b810b3ba12ac0bbffe2b016d71450aafe62c210aa1fe1058030a53",
+    "metadata": {
+        "title": "None",
+        "subtitle": "None",
+        "author": "None",
+        "language": "None",
+        "license": "None",
+        "URL": "None",
+        "pyrope_versions": "None",
+        "origin": "None",
+        "discipline": "None",
+        "area": "None",
+        "topics": "None",
+        "keywords": "None",
+        "taxonomy": "None"
+    },
+    "ifields": {
+        "numbers": "<pyrope.nodes.dtype_nodes.Set ID='934fa12f-ddf2-4b48-a540-fa22ce2b8ea0'>"
+    },
+    "the_solution": {},
+    "a_solution": {
+        "numbers": "{1, 2, 3}"
+    },
+    "dummy_input": {
+        "numbers": "{0, 1, 2}"
+    },
+    "score_weights": {
+        "numbers": 1.0
+    },
+    "max_scores": {
+        "numbers": 1.0
+    },
+    "preamble": "You know that $2 + 2 = 2 \\times 2$."
+}
