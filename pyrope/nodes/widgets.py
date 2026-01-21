@@ -358,6 +358,9 @@ class Checkbox(Widget):
         Widget.__init__(self, **kwargs)
         self._value = False
 
+    def toLaTeX(self):
+        return "\\PyRopeCheckbox"
+
 
 class Dropdown(Widget):
 
@@ -383,6 +386,8 @@ class Dropdown(Widget):
         self.labels = labels
         self.options = args
 
+    def toLaTeX(self):
+        return "\\PyRopeDropdown{" + ",".join(self.labels) + "}"
 
 class RadioButtons(Dropdown):
 
@@ -393,6 +398,9 @@ class RadioButtons(Dropdown):
         if not isinstance(vertical, bool):
             raise ValueError("'vertical' has to be a boolean.")
         self.vertical = vertical
+
+    def toLaTeX(self):
+        return "\\PyRopeRadioButtons{" + ",".join(self.labels) + "}"
 
 
 class Slider(Widget):
@@ -425,6 +433,9 @@ class Slider(Widget):
         self.step = step
         self.width = width
 
+    def toLaTeX(self):
+        return "\\PyRopeText"
+
 
 class Text(Widget):
 
@@ -442,6 +453,9 @@ class Text(Widget):
         self.placeholder = placeholder
         self.width = width
 
+    def toLaTeX(self):
+        return "\\PyRopeText"
+
 
 class TextArea(Text):
 
@@ -455,3 +469,8 @@ class TextArea(Text):
                 "'height' has to be an integer greater than or equal to 0."
             )
         self.height = height
+
+    def toLaTeX(self):
+        # return f"\\PyRopeTextArea[{self.height}][{self.width}]"
+        return "\\PyRopeText"
+    

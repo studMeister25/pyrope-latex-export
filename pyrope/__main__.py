@@ -4,11 +4,14 @@ import subprocess
 import sys
 import unittest
 from uuid import uuid4
+from datetime import datetime
+import shutil
 
 import nbformat
 
 from pyrope import examples, ExercisePool, ExerciseRunner
-from pyrope.core import CLIParser
+from pyrope.core import CLIParser, ParametrizedExercise
+from pyrope.formatters import TemplateFormatter
 from pyrope.frontends import ConsoleFrontend, LaTeXGenerator
 
 
@@ -68,7 +71,7 @@ if args.subcommand == 'run':
             f'%pyrope run {" ".join(args.filepaths)}'
             f'{" --debug" if args.debug else ""}'
         )
-        nb['cells'] = [nbformat.v4.new_code_cell(code)]
+        nb['exercise_cells'] = [nbformat.v4.new_code_cell(code)]
         nb.metadata['pyrope'] = {'autoexecute': True}
         nb = nbformat.validator.normalize(nb)[1]
         with open(file, 'w') as f:
@@ -122,9 +125,17 @@ if args.subcommand == 'test':
 
 if args.subcommand == 'generate':
     print('Generating LaTeX')
-    # for exercise in pool:
-    #     print('Generate exercise')
-    # nb = nbformat.v4.new_notebook()
+
+    # Create test folder
+    test_name = args.testname
+    try:
+        os.mkdir(test_name)
+        print(f"Directory '{test_name}' created successfully.")
+    except FileExistsError:
+        print(f"Directory '{test_name}' already exists; aborting...")
+        sys.exit(1)
+
+
     file = 'generator.ipynb'
     try:
         assert os.path.isdir(args.path)
@@ -138,97 +149,159 @@ if args.subcommand == 'generate':
     #     'import pyrope\n\n'
     #     f'%pyrope run {" ".join(args.filepaths)}'
     # )
-    # nb['cells'] = [nbformat.v4.new_code_cell(code)]
+    # nb['exercise_cells'] = [nbformat.v4.new_code_cell(code)]
     # nb.metadata['pyrope'] = {'autoexecute': True}
     # nb = nbformat.validator.normalize(nb)[1]
     # with open(file, 'w') as f:
     #     nbformat.write(nb, f)
 
-    for exercise in pool:
-        runner = ExerciseRunner(exercise, debug=args.debug)
-        frontend = LaTeXGenerator()
-        runner.set_frontend(frontend)
-        frontend.set_runner(runner)
-        frontend.set_file(file)
-        runner.run()
+    ## pexercise.model.ifields
+    ## pexercise.parameters
 
-    # for exercise in pool:
-    #     runner = ExerciseRunner(exercise, debug=args.debug)
-    #     frontend = JupyterFrontend()
-    #     runner.set_frontend(frontend)
-    #     frontend.set_runner(runner)
-    #     runner.run()
-    #     pexercise = runner.pexercise
-    #     print('preamble:', pexercise.preamble)
-    #     # print(pexercise.__dict__)
-    #     print('exercise:', pexercise.exercise.__dict__)
-    #     print('problem:', dir(pexercise))
-    #     print('scores:', {
-    #         ifield: '{}/{}'.format(
-    #             pexercise.scores[ifield], pexercise.max_scores[ifield]
-    #         )
-    #         for ifield in pexercise.ifields
-    #     })
-    #     print(
-    #         f'total score: '
-    #         f'{pexercise.total_score}/{pexercise.max_total_score}'
-    #     )
-    #     print('score weights:', pexercise.score_weights)
+    amount = args.amount
+    for test_num in range(1, amount+1):
 
+        print(f'File {test_num} of {amount}')
 
-    # os.system('jupyter nbconvert --to notebook --execute generator.ipynb')
+        exercise_cells = []
+        solution_cells = []
 
-    os.system(f'jupyter nbconvert --to latex {file}')
+        for exercise in pool:
+            exercise_cells.append(nbformat.v4.new_raw_cell('\\PyRopeExercise{'))
+            solution_cells.append(nbformat.v4.new_raw_cell('\\PyRopeExercise{'))
+            pexercise = ParametrizedExercise(exercise)
+            if pexercise.preamble != '':
+                preamble = '\n'.join([line.strip() for line in pexercise.preamble.split('\n')])
+                exercise_cells.append(nbformat.v4.new_markdown_cell(preamble))
+                solution_cells.append(nbformat.v4.new_markdown_cell(preamble))
+            exercise_cells.append(nbformat.v4.new_raw_cell('}'))
+            solution_cells.append(nbformat.v4.new_raw_cell('}'))
 
-    print('Inserting into template')
+            exercise_cells.append(nbformat.v4.new_raw_cell('{'))
+            solution_cells.append(nbformat.v4.new_raw_cell('{'))
+            template = '\n'.join([line.strip() for line in pexercise.model.template.split('\n')])
+            template_string_constructor = ''
+            solution_string_constructor = ''
 
-    texFile = 'generator.tex'
-    try:
-        assert os.path.isdir(args.path)
-    except AssertionError:
-        raise NotADirectoryError(
-            f'{args.path} does not exist or is not a directory.'
-        )
-    else:
-        texFile = os.path.join(args.path, texFile)
+            for literal_text, field_name, format_spec in TemplateFormatter.parse(template):
 
-    templateFile = 'latexTemplate.tex'
-    try:
-        assert os.path.isdir(args.path)
-    except AssertionError:
-        raise NotADirectoryError(
-            f'{args.path} does not exist or is not a directory.'
-        )
-    else:
-        templateFile = os.path.join(args.path, templateFile)
+                if literal_text:
+                    template_string_constructor += literal_text
+                    solution_string_constructor += literal_text
+                    #exercise_cells.append(nbformat.v4.new_markdown_cell(literal_text))
 
-    with open(texFile, "r") as tex, open(templateFile, "r") as template, open("result.tex", "w") as result:
-        resultLines = []
-        templateLines = template.readlines()
-        templateLineCounter = 0
-        while not templateLines[templateLineCounter].__contains__("<<exercises>>"):
-            resultLines.append(templateLines[templateLineCounter])
-            templateLineCounter += 1
+                if field_name:
+                    if format_spec:
+                        #TODO special format handling
+                        #exercise_cells.append(nbformat.v4.new_raw_cell(f'{pexercise.parameters.get(field_name)}'))
+                        template_string_constructor += pexercise.parameters.get(field_name).__str__()
+                        solution_string_constructor += pexercise.parameters.get(field_name).__str__()
+                    else:
+                        param_value = pexercise.parameters.get(field_name)
+                        if param_value is None:
+                            for widget in pexercise.model.widgets:
+                                if widget.ifield_name.__eq__(field_name):
+                                    #exercise_cells.append(nbformat.v4.new_raw_cell(f'{widget.toLaTeX()}'))
+                                    template_string_constructor += widget.toLaTeX()
+                                    if pexercise.the_solution.get(field_name) is None:
+                                        solution_string = pexercise.a_solution.get(field_name).__str__()
+                                    else:
+                                        solution_string = pexercise.the_solution.get(field_name).__str__()
+                                    solution_string_constructor += f'\\textbf{{\\underline{{ {solution_string} }}}}'
+                                    break
+                        else: 
+                            #exercise_cells.append(nbformat.v4.new_raw_cell(f'{param_value}'))
+                            template_string_constructor += param_value.__str__()
+                            solution_string_constructor += param_value.__str__()
+
+            exercise_cells.append(nbformat.v4.new_markdown_cell(template_string_constructor))
+            solution_cells.append(nbformat.v4.new_markdown_cell(solution_string_constructor))
+            exercise_cells.append(nbformat.v4.new_raw_cell('}\n'))
+            solution_cells.append(nbformat.v4.new_raw_cell('}\n'))
+
+        generate_solutions = args.solutions  
+        if args.solutions:
+            cycles = 2
+        else:
+            cycles = 1
         
-        texLines = tex.readlines()
-        foundBegin = False
-        for line in texLines:
-            if line.__contains__("\\exercise{"):
-                foundBegin = True
-            if line.__contains__("% Add a bibliography block to the postdoc"):
+        for cycle_num in range(0,cycles):
+            nb = nbformat.v4.new_notebook()
+            if cycle_num == 1:
+                print('Collecting solutions')
+                nb['cells'] = solution_cells
+            else:
+                nb['cells'] = exercise_cells
+            nb = nbformat.validator.normalize(nb)[1]
+            with open(file, 'w') as f:
+                nbformat.write(nb, f)
+
+            # widgets = pexercise.model.widgets
+            # parameters = pexercise.parameters
+            # for widget in widgets:
+            #     #print(widget.ifield_name)
+            #     print(widget.toLaTeX())
+
+            os.system(f'jupyter nbconvert --to latex {file} >/dev/null 2>/dev/null')
+
+            print('Inserting into template')
+
+            texFile = 'generator.tex'
+            try:
+                assert os.path.isdir(args.path)
+            except AssertionError:
+                raise NotADirectoryError(
+                    f'{args.path} does not exist or is not a directory.'
+                )
+            else:
+                texFile = os.path.join(args.path, texFile)
+
+            templateFile = 'latexTemplate.tex'
+            try:
+                assert os.path.isdir(args.path)
+            except AssertionError:
+                raise NotADirectoryError(
+                    f'{args.path} does not exist or is not a directory.'
+                )
+            else:
+                templateFile = os.path.join(args.path, templateFile)
+
+            if cycle_num == 1:
+                test_file = f'{test_name}/{test_name}-SOLUTION-{test_num :03d}.tex'
+            else:
+                test_file = f'{test_name}/{test_name}-{test_num :03d}.tex'
+            with open(texFile, "r") as tex, open(templateFile, "r") as template, open(test_file, "w") as result:
+                resultLines = []
+                templateLines = template.readlines()
+                templateLineCounter = 0
+                while not templateLines[templateLineCounter].__contains__("<<exercises>>"):
+                    resultLines.append(templateLines[templateLineCounter])
+                    templateLineCounter += 1
+                
+                texLines = tex.readlines()
                 foundBegin = False
-            if foundBegin:
-                resultLines.append(line)
-        
-        while templateLineCounter < templateLines.__len__():
-            resultLines.append(templateLines[templateLineCounter])
-            templateLineCounter += 1
-        
-        result.writelines(resultLines)
-        result.close()
+                for line in texLines:
+                    if line.__contains__("\\PyRopeExercise{"):
+                        foundBegin = True
+                    if line.__contains__("% Add a bibliography block to the postdoc"):
+                        foundBegin = False
+                        break
+                    if foundBegin:
+                        resultLines.append(line)
+                
+                templateLineCounter += 1
+                while templateLineCounter < templateLines.__len__():
+                    resultLines.append(templateLines[templateLineCounter])
+                    templateLineCounter += 1
+                
+                result.writelines(resultLines)
+                result.close()
+            
+        if test_num == 1:
+            shutil.copytree('assets', test_name + '/assets')
 
-    try:
-        os.remove(file)
-        os.remove(texFile)
-    except FileNotFoundError:
-        pass
+    # try:
+    #     os.remove(file)
+    #     os.remove(texFile)
+    # except FileNotFoundError:
+    #     pass

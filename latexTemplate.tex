@@ -1,27 +1,70 @@
 \documentclass{article}
 \usepackage{graphicx} % Required for inserting images
-\usepackage[a4paper, total={16cm, 23cm}]{geometry}
+\usepackage[a4paper, total={16cm, 26cm}]{geometry}
 \usepackage{parskip}
 \usepackage{amsmath} % Equations
+\usepackage{amssymb} % Equations
+\usepackage{array} % required for text wrapping in tables
+\usepackage[export]{adjustbox}
 
-\title{Beispieltest}
-\author{Platz für Hinweise}
-\date{Name, Punkte o. Ä.}
+\title{Papierklausur-Vorlage}
+\author{Beispiel-Kurs, in dem diese Klausur stattfindet}
+\date{Hinweise wie beispielsweise zugelassene Hilfsmittel, Benotungsschlüssel, aber auch Belehrungen 
+können hier Platz finden}
 
-\newcommand{\exercise}[2]{\item \expandafter\ifx\expandafter\relax
-	\detokenize{#1}\relax\else #1 \\ \fi #2 \\}
+\newcommand{\PyRopeExercise}[2]{\item \expandafter\ifx\expandafter\relax
+	\detokenize{#1}\relax\else #1 \\ \fi #2 }
 
-\newcommand{\inputline}{\rule{30pt}{0.4pt}}
+\newcommand{\PyRopeText}{\rule{30pt}{0.4pt}~}
+
+\newcommand{\PyRopeCheckbox}{$\square$~}
+
+\NewDocumentCommand\PyRopeDropdown{>{\SplitList{,}}m}
+{%
+	[
+	\ProcessList{#1}{\PyRopeDropdownItem}%
+	\firstitemtrue
+	]
+}
+\newif\iffirstitem
+\firstitemtrue   
+\newcommand\PyRopeDropdownItem[1]{%
+	\iffirstitem
+		\firstitemfalse
+	\else
+		$\vert$~%
+	\fi
+	{#1~}}
+
+\NewDocumentCommand\PyRopeRadioButtons{>{\SplitList{,}}m}
+{%
+	\begin{itemize}
+		\ProcessList{#1}{\PyRopeRadioButtonsItem}%
+	\end{itemize}
+}
+
+\newcommand{\PyRopeRadioButtonsItem}[1]{%
+		\item[$\bigcirc$] #1
+}
 
 \begin{document}
 
-\maketitle
 
-\vspace{5pt}
-\hrule
+\noindent
+\begin{tabular}[h]{|>{\raggedright\arraybackslash}p{0.4\linewidth}|>{\raggedright\arraybackslash}p{0.15\linewidth}|>{\raggedright\arraybackslash}p{0.15\linewidth}|}
+     \hline Name: &  Mat.-Nr.: & Kurs: \\ & & \\ & & \\ \hline
+\end{tabular}
+\hfill
+\includegraphics[scale=1, valign=c]{assets/logo-pyrope-icon.png}
+
+{\let\newpage\relax\maketitle}
+
 \vspace{10pt}
+\hrule
+\vspace{5pt}
 
 \begin{enumerate}
+	\setlength{\itemsep}{10pt}
 
 <<exercises>>
 

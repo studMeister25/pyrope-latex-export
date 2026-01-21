@@ -914,11 +914,17 @@ class CLIParser:
             help='start generating LaTeX from exercises'
         )
         generate_parser.add_argument(
+            '--testname',
+            type=str,
+            required=True,
+            help='define the name of your test'
+        )
+        generate_parser.add_argument(
             'filepaths',
             nargs='*',
             type=str,
             help='paths to python scripts with exercise definitions',
-            metavar='filepath',
+            metavar='filepath'
         )
         generate_parser.add_argument(
             '--path',
@@ -926,11 +932,22 @@ class CLIParser:
             help='location to store files'
         )
         generate_parser.add_argument(
-            '--debug',
-            default=False,
-            action='store_true',
-            help='enables debug mode for the frontend',
+            '--amount',
+            type=int,
+            default=1,
+            help='amount of distinct test versions to create'
         )
+        generate_parser.add_argument(
+            '--solutions',
+            default=False,
+            help='create additional files that show the solutions'
+        )
+        # generate_parser.add_argument(
+        #     '--debug',
+        #     default=False,
+        #     action='store_true',
+        #     help='enables debug mode for the generator'
+        # )
 
     def parse_args(self, args=None, namespace=None):
         return self._parser.parse_args(args=args, namespace=namespace)
