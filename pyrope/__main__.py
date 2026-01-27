@@ -8,6 +8,7 @@ from datetime import datetime
 import shutil
 
 import nbformat
+from nbconvert import LatexExporter
 
 from pyrope import examples, ExercisePool, ExerciseRunner
 from pyrope.core import CLIParser, ParametrizedExercise
@@ -242,11 +243,16 @@ if args.subcommand == 'generate':
             #     #print(widget.ifield_name)
             #     print(widget.toLaTeX())
 
-            os.system(f'jupyter nbconvert --to latex {file} >/dev/null 2>/dev/null')
+            #os.system(f'jupyter nbconvert --to latex {file} >/dev/null 2>/dev/null')
+            latex_exporter = LatexExporter(template_name="latex")
+            (body, resources) = latex_exporter.from_notebook_node(nb)
+
+            texFile = 'generator.tex'
+            with open(texFile, 'w') as f:
+                f.write(body)
 
             print('Inserting into template')
 
-            texFile = 'generator.tex'
             try:
                 assert os.path.isdir(args.path)
             except AssertionError:
