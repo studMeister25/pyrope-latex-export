@@ -1,133 +1,63 @@
-
-from dataclasses import dataclass
-from typing import Any
-from uuid import UUID
+from pyrope.formatters import TemplateFormatter
 
 import nbformat
 
-from pyrope.formatters import TemplateFormatter
-from pyrope.messages import (
-    ChangeWidgetAttribute, CreateWidget, ExerciseAttribute, RenderTemplate,
-    Submit, WaitingForSubmission, WidgetValidationError
-)
-
-
-@dataclass
-class LaTexWidget:
-
-    ID: UUID
-    index: int
-    info: str = ''
-    valid: bool = None
-    value: Any = None
-
-
 class LaTeXGenerator:
 
-    def __init__(self):
-        self.file = None
-        self.cells = []
-        self.answers = {}
-        self.debug = False
-        self.parameters = {}
-        self.runner = None
-        self.total_score, self.max_total_score = None, None
-        self.widgets = {}
-
-    def set_runner(self, runner):
-        self.runner = runner
-        runner.register_observer(self.observer)
+    def __init__(self, includes_solution):
+        self.includes_solution = includes_solution
+        self.exercise_cells = []
+        self.solution_cells = []
     
-    def set_file(self, file):
-        self.file = file
+    def generate_cells_of_exercise(self, pexercise):
+        self.exercise_cells.append(nbformat.v4.new_raw_cell('\\PyRopeExercise{'))
+        if self.includes_solution: self.solution_cells.append(nbformat.v4.new_raw_cell('\\PyRopeExercise{'))
 
-    def formatter(self, template, **kwargs):
-        return TemplateFormatter.format(
-            template, **(self.parameters | kwargs)
-        )
+        if pexercise.preamble != '':
+            preamble = '\n'.join([line.strip() for line in pexercise.preamble.split('\n')])
+            self.exercise_cells.append(nbformat.v4.new_markdown_cell(preamble))
+            if self.includes_solution: self.solution_cells.append(nbformat.v4.new_markdown_cell(preamble))
+        self.exercise_cells.append(nbformat.v4.new_raw_cell('}'))
+        if self.includes_solution: self.solution_cells.append(nbformat.v4.new_raw_cell('}'))
 
-    def render_preamble(self, preamble):
-        # print('Render preamble')
-        self.cells.append(nbformat.v4.new_raw_cell('\\exercise{'))
-        if preamble != '':
-            md_preamble = (
-                f'{self.formatter(preamble)}'
-            )
-            # print(md_preamble)
-            self.cells.append(nbformat.v4.new_markdown_cell(md_preamble))
+        self.exercise_cells.append(nbformat.v4.new_raw_cell('{'))
+        if self.includes_solution: self.solution_cells.append(nbformat.v4.new_raw_cell('{'))
+        template = '\n'.join([line.strip() for line in pexercise.model.template.split('\n')])
+        template_string_constructor = ''
+        solution_string_constructor = ''
 
-        self.cells.append(nbformat.v4.new_raw_cell('}'))
+        for literal_text, field_name, format_spec in TemplateFormatter.parse(template):
 
-    def render_problem(self, template):
-        # print('Render problem')
-        self.cells.append(nbformat.v4.new_raw_cell('{'))
-        fields = {
-            f'#{widget_id}': f'\\inputline'
-            for widget_id, widget in self.widgets.items()
-        }
-        md_problem = (
-            f'{self.formatter(template, **fields)}'
-        )
-        # print(md_problem)
-        self.cells.append(nbformat.v4.new_markdown_cell(md_problem))
-        self.cells.append(nbformat.v4.new_raw_cell('}'))
+            if literal_text:
+                template_string_constructor += literal_text
+                if self.includes_solution: solution_string_constructor += literal_text
 
-    def render_feedback(self, feedback):
-        print('Render feedback ignored')
+            if field_name:
+                if format_spec:
+                    #TODO special format handling
+                    template_string_constructor += pexercise.parameters.get(field_name).__str__()
+                    if self.includes_solution: solution_string_constructor += pexercise.parameters.get(field_name).__str__()
+                else:
+                    param_value = pexercise.parameters.get(field_name)
+                    if param_value is None:
+                        for widget in pexercise.model.widgets:
+                            if widget.ifield_name.__eq__(field_name):
+                                template_string_constructor += widget.toLaTeX()
+                                if self.includes_solution:
+                                    if pexercise.the_solution.get(field_name) is None:
+                                        solution_string = pexercise.a_solution.get(field_name).__str__()
+                                    else:
+                                        solution_string = pexercise.the_solution.get(field_name).__str__()
+                                    solution_string_constructor += f'\\textbf{{\\underline{{ {solution_string} }}}}'
+                                break
+                    else: 
+                        template_string_constructor += param_value.__str__()
+                        if self.includes_solution: solution_string_constructor += param_value.__str__()
 
-    def observer(self, msg):
-        if self.debug:
-            print(msg)
+        self.exercise_cells.append(nbformat.v4.new_markdown_cell(template_string_constructor))
+        if self.includes_solution: self.solution_cells.append(nbformat.v4.new_markdown_cell(solution_string_constructor))
+        self.exercise_cells.append(nbformat.v4.new_raw_cell('}\n'))
+        if self.includes_solution: self.solution_cells.append(nbformat.v4.new_raw_cell('}\n'))
 
-        if isinstance(msg, RenderTemplate):
-            match msg.template_type:
-                case 'preamble':
-                    self.render_preamble(msg.template)
-                case 'problem':
-                    self.render_problem(msg.template)
-                case 'feedback':
-                    self.render_feedback(msg.template)
-        elif isinstance(msg, CreateWidget):
-            self.widgets[msg.widget_id] = LaTexWidget(
-                msg.widget_id, len(self.widgets)
-            )
-        elif isinstance(msg, ExerciseAttribute):
-            match msg.attribute_name:
-                case 'parameters':
-                    self.parameters = msg.attribute_value
-                case 'answers':
-                    self.answers = msg.attribute_value
-                case 'total_score':
-                    self.total_score = msg.attribute_value
-                case 'max_total_score':
-                    self.max_total_score = msg.attribute_value
-                case 'debug':
-                    self.debug = msg.attribute_value
-                    if self.debug:
-                        print(msg)
-        elif isinstance(msg, ChangeWidgetAttribute):
-            match msg.attribute_name:
-                case 'value':
-                    self.widgets[msg.widget_id].value = msg.attribute_value
-                case 'valid':
-                    self.widgets[msg.widget_id].valid = msg.attribute_value
-                case 'info':
-                    self.widgets[msg.widget_id].info = msg.attribute_value
-        elif isinstance(msg, WaitingForSubmission):
-            self.writeNotebook()
-        elif isinstance(msg, WidgetValidationError) and not self.debug:
-            print(msg)
-
-    def notify(self, msg):
-        self.runner.observer(msg)
-
-    def writeNotebook(self):
-        try:
-            nb = nbformat.read(self.file, nbformat.NO_CONVERT)
-            nb['cells'] = nb['cells'] + self.cells
-        except FileNotFoundError:
-            nb = nbformat.v4.new_notebook()
-            nb['cells'] = self.cells
-        nb = nbformat.validator.normalize(nb)[1]
-        with open(self.file, 'w') as f:
-            nbformat.write(nb, f)
+    def get_notebook_cells(self):
+        return (self.exercise_cells, self.solution_cells)

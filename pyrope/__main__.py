@@ -133,7 +133,7 @@ if args.subcommand == 'generate':
         os.mkdir(test_name)
         print(f"Directory '{test_name}' created successfully.")
     except FileExistsError:
-        print(f"Directory '{test_name}' already exists; aborting...")
+        print(f"Directory '{test_name}' already exists; generation aborted")
         sys.exit(1)
 
 
@@ -146,82 +146,75 @@ if args.subcommand == 'generate':
         )
     else:
         file = os.path.join(args.path, file)
-    # code = (
-    #     'import pyrope\n\n'
-    #     f'%pyrope run {" ".join(args.filepaths)}'
-    # )
-    # nb['exercise_cells'] = [nbformat.v4.new_code_cell(code)]
-    # nb.metadata['pyrope'] = {'autoexecute': True}
-    # nb = nbformat.validator.normalize(nb)[1]
-    # with open(file, 'w') as f:
-    #     nbformat.write(nb, f)
 
-    ## pexercise.model.ifields
-    ## pexercise.parameters
+    includes_solutions = args.solutions
 
     amount = args.amount
     for test_num in range(1, amount+1):
 
         print(f'File {test_num} of {amount}')
 
-        exercise_cells = []
-        solution_cells = []
-
+        latex_generator = LaTeXGenerator(includes_solutions)
         for exercise in pool:
-            exercise_cells.append(nbformat.v4.new_raw_cell('\\PyRopeExercise{'))
-            solution_cells.append(nbformat.v4.new_raw_cell('\\PyRopeExercise{'))
             pexercise = ParametrizedExercise(exercise)
-            if pexercise.preamble != '':
-                preamble = '\n'.join([line.strip() for line in pexercise.preamble.split('\n')])
-                exercise_cells.append(nbformat.v4.new_markdown_cell(preamble))
-                solution_cells.append(nbformat.v4.new_markdown_cell(preamble))
-            exercise_cells.append(nbformat.v4.new_raw_cell('}'))
-            solution_cells.append(nbformat.v4.new_raw_cell('}'))
+            latex_generator.generate_cells_of_exercise(pexercise)
+        
+        (exercise_cells, solution_cells) = latex_generator.get_notebook_cells()
 
-            exercise_cells.append(nbformat.v4.new_raw_cell('{'))
-            solution_cells.append(nbformat.v4.new_raw_cell('{'))
-            template = '\n'.join([line.strip() for line in pexercise.model.template.split('\n')])
-            template_string_constructor = ''
-            solution_string_constructor = ''
+        # for exercise in pool:
+        #     exercise_cells.append(nbformat.v4.new_raw_cell('\\PyRopeExercise{'))
+        #     solution_cells.append(nbformat.v4.new_raw_cell('\\PyRopeExercise{'))
+        #     pexercise = ParametrizedExercise(exercise)
+        #     if pexercise.preamble != '':
+        #         preamble = '\n'.join([line.strip() for line in pexercise.preamble.split('\n')])
+        #         exercise_cells.append(nbformat.v4.new_markdown_cell(preamble))
+        #         solution_cells.append(nbformat.v4.new_markdown_cell(preamble))
+        #     exercise_cells.append(nbformat.v4.new_raw_cell('}'))
+        #     solution_cells.append(nbformat.v4.new_raw_cell('}'))
 
-            for literal_text, field_name, format_spec in TemplateFormatter.parse(template):
+        #     exercise_cells.append(nbformat.v4.new_raw_cell('{'))
+        #     solution_cells.append(nbformat.v4.new_raw_cell('{'))
+        #     template = '\n'.join([line.strip() for line in pexercise.model.template.split('\n')])
+        #     template_string_constructor = ''
+        #     solution_string_constructor = ''
 
-                if literal_text:
-                    template_string_constructor += literal_text
-                    solution_string_constructor += literal_text
-                    #exercise_cells.append(nbformat.v4.new_markdown_cell(literal_text))
+        #     for literal_text, field_name, format_spec in TemplateFormatter.parse(template):
 
-                if field_name:
-                    if format_spec:
-                        #TODO special format handling
-                        #exercise_cells.append(nbformat.v4.new_raw_cell(f'{pexercise.parameters.get(field_name)}'))
-                        template_string_constructor += pexercise.parameters.get(field_name).__str__()
-                        solution_string_constructor += pexercise.parameters.get(field_name).__str__()
-                    else:
-                        param_value = pexercise.parameters.get(field_name)
-                        if param_value is None:
-                            for widget in pexercise.model.widgets:
-                                if widget.ifield_name.__eq__(field_name):
-                                    #exercise_cells.append(nbformat.v4.new_raw_cell(f'{widget.toLaTeX()}'))
-                                    template_string_constructor += widget.toLaTeX()
-                                    if pexercise.the_solution.get(field_name) is None:
-                                        solution_string = pexercise.a_solution.get(field_name).__str__()
-                                    else:
-                                        solution_string = pexercise.the_solution.get(field_name).__str__()
-                                    solution_string_constructor += f'\\textbf{{\\underline{{ {solution_string} }}}}'
-                                    break
-                        else: 
-                            #exercise_cells.append(nbformat.v4.new_raw_cell(f'{param_value}'))
-                            template_string_constructor += param_value.__str__()
-                            solution_string_constructor += param_value.__str__()
+        #         if literal_text:
+        #             template_string_constructor += literal_text
+        #             solution_string_constructor += literal_text
+        #             #exercise_cells.append(nbformat.v4.new_markdown_cell(literal_text))
 
-            exercise_cells.append(nbformat.v4.new_markdown_cell(template_string_constructor))
-            solution_cells.append(nbformat.v4.new_markdown_cell(solution_string_constructor))
-            exercise_cells.append(nbformat.v4.new_raw_cell('}\n'))
-            solution_cells.append(nbformat.v4.new_raw_cell('}\n'))
+        #         if field_name:
+        #             if format_spec:
+        #                 #TODO special format handling
+        #                 #exercise_cells.append(nbformat.v4.new_raw_cell(f'{pexercise.parameters.get(field_name)}'))
+        #                 template_string_constructor += pexercise.parameters.get(field_name).__str__()
+        #                 solution_string_constructor += pexercise.parameters.get(field_name).__str__()
+        #             else:
+        #                 param_value = pexercise.parameters.get(field_name)
+        #                 if param_value is None:
+        #                     for widget in pexercise.model.widgets:
+        #                         if widget.ifield_name.__eq__(field_name):
+        #                             #exercise_cells.append(nbformat.v4.new_raw_cell(f'{widget.toLaTeX()}'))
+        #                             template_string_constructor += widget.toLaTeX()
+        #                             if pexercise.the_solution.get(field_name) is None:
+        #                                 solution_string = pexercise.a_solution.get(field_name).__str__()
+        #                             else:
+        #                                 solution_string = pexercise.the_solution.get(field_name).__str__()
+        #                             solution_string_constructor += f'\\textbf{{\\underline{{ {solution_string} }}}}'
+        #                             break
+        #                 else: 
+        #                     #exercise_cells.append(nbformat.v4.new_raw_cell(f'{param_value}'))
+        #                     template_string_constructor += param_value.__str__()
+        #                     solution_string_constructor += param_value.__str__()
 
-        generate_solutions = args.solutions  
-        if args.solutions:
+        #     exercise_cells.append(nbformat.v4.new_markdown_cell(template_string_constructor))
+        #     solution_cells.append(nbformat.v4.new_markdown_cell(solution_string_constructor))
+        #     exercise_cells.append(nbformat.v4.new_raw_cell('}\n'))
+        #     solution_cells.append(nbformat.v4.new_raw_cell('}\n'))
+
+        if includes_solutions:
             cycles = 2
         else:
             cycles = 1
