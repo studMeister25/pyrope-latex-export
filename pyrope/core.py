@@ -942,6 +942,17 @@ class CLIParser:
             default=False,
             help='create additional files that show the solutions'
         )
+        generate_parser.add_argument(
+            '--hints',
+            type=int,
+            default=0,
+            help='number of hints that are added to the exercises (if available)'
+        )
+        generate_parser.add_argument(
+            '--template',
+            default='',
+            help='path to custom latex template'
+        )
         # generate_parser.add_argument(
         #     '--debug',
         #     default=False,

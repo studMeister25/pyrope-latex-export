@@ -12,13 +12,36 @@
 \date{Hinweise wie beispielsweise zugelassene Hilfsmittel, Benotungsschlüssel, aber auch Belehrungen 
 können hier Platz finden}
 
-\newcommand{\PyRopeExercise}[2]{\item \expandafter\ifx\expandafter\relax
-	\detokenize{#1}\relax\else #1 \\ \fi #2 }
+% PyRopeExercise command
+%%	#1: preamble
+%%	#2: problem
+%%	#3: max total score
+\newcommand{\PyRopeExercise}[3]{\item
+	\expandafter\ifx\expandafter\relax
+	\detokenize{#1}\relax\else #1 \\ \fi #2 \hfill \rule{10pt}{0.4pt}~/ #3 P.}
 
+% PyRopeHint command
+%%	#1: hint text
+\newcommand{\PyRopeHint}[1]{\noindent\fbox{%
+		\parbox{\dimexpr%
+		\linewidth-2\fboxsep-2\fboxrule}%
+		{#1}}}
+
+% PyRopeSolution command
+%%	#1: solution
+\newcommand{\PyRopeSolution}[1]{\textbf{\underline{~#1~}}}
+
+% PyRopeText command
+%%	empty space for answer; no parameters
 \newcommand{\PyRopeText}{\rule{30pt}{0.4pt}~}
 
+% PyRopeCheckbox command
+%%	no parameters
 \newcommand{\PyRopeCheckbox}{$\square$~}
 
+% PyRopeDropdown command
+%%	overall dropdown style definition
+%%	#1: dropdown options list; options separated by comma
 \NewDocumentCommand\PyRopeDropdown{>{\SplitList{,}}m}
 {%
 	[
@@ -27,7 +50,10 @@ können hier Platz finden}
 	]
 }
 \newif\iffirstitem
-\firstitemtrue   
+\firstitemtrue 
+% PyRopeDropdownItem command
+%%	style definition of one item
+%%	#1: dropdown item
 \newcommand\PyRopeDropdownItem[1]{%
 	\iffirstitem
 		\firstitemfalse
@@ -36,13 +62,18 @@ können hier Platz finden}
 	\fi
 	{#1~}}
 
+% PyRopeRadioButtons command
+%%	overall list style definition
+%%	#1: radiobutton options list; options separated by comma
 \NewDocumentCommand\PyRopeRadioButtons{>{\SplitList{,}}m}
 {%
 	\begin{itemize}
 		\ProcessList{#1}{\PyRopeRadioButtonsItem}%
 	\end{itemize}
 }
-
+% PyRopeRadioButtonsItem command
+%%	style definition of one item
+%%	#1: radio button item
 \newcommand{\PyRopeRadioButtonsItem}[1]{%
 		\item[$\bigcirc$] #1
 }
