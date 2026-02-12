@@ -2,11 +2,12 @@ from pyrope.formatters import TemplateFormatter
 
 import nbformat
 
-class LaTeXGenerator:
+class LatexGenerator:
 
-    def __init__(self, includes_solution, number_of_hints):
+    def __init__(self, includes_solution, number_of_hints, notebook_file):
         self.includes_solution = includes_solution
         self.number_of_hints = number_of_hints
+        self.notebook_file = notebook_file
         self.exercise_cells = []
         self.solution_cells = []
     
@@ -70,7 +71,7 @@ class LaTeXGenerator:
                     if param_value is None:
                         for widget in pexercise.model.widgets:
                             if widget.ifield_name.__eq__(field_name):
-                                execise_string_constructor += widget.toLaTeX()
+                                execise_string_constructor += self.toLatex(widget)
                                 if self.includes_solution:
                                     if pexercise.the_solution.get(field_name) is None:
                                         solution_string = pexercise.a_solution.get(field_name).__str__()
@@ -82,3 +83,20 @@ class LaTeXGenerator:
                         execise_string_constructor += param_value.__str__()
                         if self.includes_solution: solution_string_constructor += param_value.__str__()
         return (execise_string_constructor, solution_string_constructor)
+    
+    def toLatex(self, widget):
+        match widget.__class__.__name__:
+            case 'Checkbox':
+                return "\\PyRopeCheckbox"
+            case 'Dropdown':
+                return "\\PyRopeDropdown{" + ",".join(widget.labels) + "}"
+            case 'RadioButtons':
+                return "\\PyRopeRadioButtons{" + ",".join(widget.labels) + "}"
+            case 'Slider':
+                return "\\PyRopeText"
+            case 'Text':
+                return "\\PyRopeText"
+            case 'TextArea':
+                return "\\PyRopeText"
+            case _:
+                return "\\PyRopeText"

@@ -13,7 +13,7 @@ from nbconvert import LatexExporter
 from pyrope import examples, ExercisePool, ExerciseRunner
 from pyrope.core import CLIParser, ParametrizedExercise
 from pyrope.formatters import TemplateFormatter
-from pyrope.frontends import ConsoleFrontend, LaTeXGenerator
+from pyrope.frontends import ConsoleFrontend, LatexGenerator
 
 
 parser = CLIParser(prog='python3 -m pyrope')
@@ -144,9 +144,9 @@ if args.subcommand == 'generate':
         print(f"- Directory '{test_path}' already exists; generation aborted")
         sys.exit(1)
 
-    file = 'generator.ipynb'
+    notebook_file = 'generator.ipynb'
     
-    #file = os.path.join(args.path, 'generator.ipynb')
+    #notebook_file = os.path.join(args.path, 'generator.ipynb')
 
     amount = args.amount
     includes_solutions = args.solutions
@@ -156,7 +156,7 @@ if args.subcommand == 'generate':
 
         print(f'\n- File {test_num} of {amount}')
 
-        latex_generator = LaTeXGenerator(includes_solutions, num_of_hints)
+        latex_generator = LatexGenerator(includes_solutions, num_of_hints, notebook_file)
         for exercise in pool:
             pexercise = ParametrizedExercise(exercise)
             latex_generator.generate_cells_of_exercise(pexercise)
@@ -176,16 +176,16 @@ if args.subcommand == 'generate':
             else:
                 nb['cells'] = exercise_cells
             nb = nbformat.validator.normalize(nb)[1]
-            with open(file, 'w') as f:
+            with open(notebook_file, 'w') as f:
                 nbformat.write(nb, f)
 
             # widgets = pexercise.model.widgets
             # parameters = pexercise.parameters
             # for widget in widgets:
             #     #print(widget.ifield_name)
-            #     print(widget.toLaTeX())
+            #     print(widget.toLatex())
 
-            #os.system(f'jupyter nbconvert --to latex {file} >/dev/null 2>/dev/null')
+            #os.system(f'jupyter nbconvert --to latex {notebook_file} >/dev/null 2>/dev/null')
             latex_exporter = LatexExporter(template_name="latex")
             (body, resources) = latex_exporter.from_notebook_node(nb)
 
@@ -259,7 +259,7 @@ if args.subcommand == 'generate':
             shutil.copytree('assets', test_path + '/assets')
 
     # try:
-    #     os.remove(file)
+    #     os.remove(notebook_file)
     #     os.remove(texFile)
     # except FileNotFoundError:
     #     pass
