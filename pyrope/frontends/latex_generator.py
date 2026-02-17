@@ -1,4 +1,6 @@
 from pyrope.formatters import TemplateFormatter
+import sympy
+import re
 
 import nbformat
 
@@ -62,12 +64,37 @@ class LatexGenerator:
                 if self.includes_solution: solution_string_constructor += literal_text
 
             if field_name:
+                param_value = pexercise.parameters.get(field_name)
                 if format_spec:
-                    #TODO special format handling
-                    execise_string_constructor += pexercise.parameters.get(field_name).__str__()
-                    if self.includes_solution: solution_string_constructor += pexercise.parameters.get(field_name).__str__()
+                    if format_spec == 'latex':
+                        #try:
+                        print('Latex found:')
+                        print(param_value.__str__())
+                            # print(re.search(fr'{field_name} =*\n',pexercise.source))
+                            # sympy.init_printing()
+                            # print(sympy.latex(f'sympy.{param_value.__str__()}'))
+                            # execise_string_constructor += sympy.latex(f'sympy.{param_value.__str__()}')
+                            # if self.includes_solution: solution_string_constructor += sympy.latex(param_value.__str__())
+                        # except NameError as e:
+                        #     print(e.__traceback__)
+                        #     execise_string_constructor += param_value.__str__()
+                        #     if self.includes_solution: solution_string_constructor += param_value.__str__()
+                            
+                        # print('Latex found:')
+                        # nb = nbformat.v4.new_notebook()
+                        # print(param_value.__str__())
+                        # nb['cells'] = [nbformat.v4.new_code_cell(param_value.__str__())]
+
+                        # nb = nbformat.validator.normalize(nb)[1]
+                        # with open(self.notebook_file, 'w') as f:
+                        #     nbformat.write(nb, f)
+
+                        #TODO special format handling
+                        execise_string_constructor += pexercise.parameters.get(field_name).__str__()
+                        if self.includes_solution: solution_string_constructor += pexercise.parameters.get(field_name).__str__()
+                    else:
+                        raise ValueError(f'Unknown format specifier "{format_spec}".')
                 else:
-                    param_value = pexercise.parameters.get(field_name)
                     if param_value is None:
                         for widget in pexercise.model.widgets:
                             if widget.ifield_name.__eq__(field_name):
@@ -89,14 +116,14 @@ class LatexGenerator:
             case 'Checkbox':
                 return "\\PyRopeCheckbox"
             case 'Dropdown':
-                return "\\PyRopeDropdown{" + ",".join(widget.labels) + "}"
+                return "\\PyRopeDropdown{" + ";".join(widget.labels) + "}"
             case 'RadioButtons':
-                return "\\PyRopeRadioButtons{" + ",".join(widget.labels) + "}"
+                return "\\PyRopeRadioButtons{" + ";".join(widget.labels) + "}"
             case 'Slider':
-                return "\\PyRopeText"
+                return f"\\PyRopeSlider{{{widget.minimum}}}{{{widget.maximum}}}"
             case 'Text':
                 return "\\PyRopeText"
             case 'TextArea':
-                return "\\PyRopeText"
+                return f"\\PyRopeTextArea{{{widget.height}}}{{{widget.width}}}"
             case _:
                 return "\\PyRopeText"

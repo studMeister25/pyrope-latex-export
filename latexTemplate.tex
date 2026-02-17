@@ -12,20 +12,29 @@
 \date{Hinweise wie beispielsweise zugelassene Hilfsmittel, Benotungsschlüssel, aber auch Belehrungen 
 können hier Platz finden}
 
+% puts the text to the right of the line if enough space
+% else on right side of a new line
+%%	#1: text to put to the right (here used for points)
+\newcommand\PointsSpacing[1]{{%
+	\unskip\nobreak\hfil\penalty50
+	\hskip2em\hbox{}\nobreak\hfil #1%
+	\parfillskip=0pt \finalhyphendemerits=0 \par}}
+
 % PyRopeExercise command
 %%	#1: preamble
 %%	#2: problem
 %%	#3: max total score
 \newcommand{\PyRopeExercise}[3]{\item
 	\expandafter\ifx\expandafter\relax
-	\detokenize{#1}\relax\else #1 \\ \fi #2 \hfill \rule{10pt}{0.4pt}~/ #3 P.}
+	\detokenize{#1}\relax\else #1 \\ \fi #2 %
+	\PointsSpacing{\rule{10pt}{0.4pt}~/ #3 P.}}
 
 % PyRopeHint command
 %%	#1: hint text
 \newcommand{\PyRopeHint}[1]{\noindent\fbox{%
-		\parbox{\dimexpr%
-		\linewidth-2\fboxsep-2\fboxrule}%
-		{#1}}}
+	\parbox{\dimexpr%
+	\linewidth-2\fboxsep-2\fboxrule}%
+	{#1}}\vspace{1mm}}
 
 % PyRopeSolution command
 %%	#1: solution
@@ -35,14 +44,26 @@ können hier Platz finden}
 %%	empty space for answer; no parameters
 \newcommand{\PyRopeText}{\rule{30pt}{0.4pt}~}
 
+% PyRopeTextArea command
+%%	#1: height (in number of lines)
+%%	#2: width (approx. in monospace chars) (not used here)
+\newcommand{\PyRopeTextArea}[2]{%
+	\framebox(\linewidth, #1\baselineskip){}}
+
+% PyRopeSlider command
+%%	converted to text input with range info
+%%	#1: minimum
+%%	#2: maximum
+\newcommand{\PyRopeSlider}[2]{\PyRopeText [#1; #2]}
+
 % PyRopeCheckbox command
 %%	no parameters
 \newcommand{\PyRopeCheckbox}{$\square$~}
 
 % PyRopeDropdown command
 %%	overall dropdown style definition
-%%	#1: dropdown options list; options separated by comma
-\NewDocumentCommand\PyRopeDropdown{>{\SplitList{,}}m}
+%%	#1: dropdown options list; options separated by semicolon
+\NewDocumentCommand\PyRopeDropdown{>{\SplitList{;}}m}
 {%
 	[
 	\ProcessList{#1}{\PyRopeDropdownItem}%
@@ -64,8 +85,8 @@ können hier Platz finden}
 
 % PyRopeRadioButtons command
 %%	overall list style definition
-%%	#1: radiobutton options list; options separated by comma
-\NewDocumentCommand\PyRopeRadioButtons{>{\SplitList{,}}m}
+%%	#1: radiobutton options list; options separated by semicolon
+\NewDocumentCommand\PyRopeRadioButtons{>{\SplitList{;}}m}
 {%
 	\begin{itemize}
 		\ProcessList{#1}{\PyRopeRadioButtonsItem}%
@@ -78,6 +99,10 @@ können hier Platz finden}
 		\item[$\bigcirc$] #1
 }
 
+% some conversions bring in this tightlist command
+% with this empty definition it gets ignored
+\newcommand{\tightlist}{}
+
 \begin{document}
 
 
@@ -88,6 +113,7 @@ können hier Platz finden}
 \hfill
 \includegraphics[scale=1, valign=c]{assets/logo-pyrope-icon.png}
 
+% prevent title on new page
 {\let\newpage\relax\maketitle}
 
 \vspace{10pt}

@@ -189,33 +189,16 @@ if args.subcommand == 'generate':
             latex_exporter = LatexExporter(template_name="latex")
             (body, resources) = latex_exporter.from_notebook_node(nb)
 
-            texFile = 'generator.tex'
-            with open(texFile, 'w') as f:
-                f.write(body)
+            # texFile = 'generator.tex'
+            # with open(texFile, 'w') as f:
+            #     f.write(body)
 
             print('\tInserting into template')
-
-            # try:
-            #     assert os.path.isdir(args.path)
-            # except AssertionError:
-            #     raise NotADirectoryError(
-            #         f'{args.path} does not exist or is not a directory.'
-            #     )
-            # else:
-            #     texFile = os.path.join(args.path, texFile)
 
             if not args.template:
                 templateFile = 'latexTemplate.tex'
             else:
                 templateFile = args.template
-            # try:
-            #     assert os.path.isdir(args.path)
-            # except AssertionError:
-            #     raise NotADirectoryError(
-            #         f'{args.path} does not exist or is not a directory.'
-            #     )
-            # else:
-            #     templateFile = os.path.join(args.path, templateFile)
 
             if cycle_num == 1:
                 test_file = f'{test_path}/{test_name}-SOLUTION-{test_num :03d}.tex'
@@ -223,7 +206,8 @@ if args.subcommand == 'generate':
                 test_file = f'{test_path}/{test_name}-{test_num :03d}.tex'
 
             try:
-                with open(texFile, "r") as tex, open(templateFile, "r") as template, open(test_file, "w") as result:
+                # with open(texFile, "r") as tex, open(templateFile, "r") as template, open(test_file, "w") as result:
+                with open(templateFile, "r") as template, open(test_file, "w") as result:
                     resultLines = []
                     templateLines = template.readlines()
                     templateLineCounter = 0
@@ -231,7 +215,7 @@ if args.subcommand == 'generate':
                         resultLines.append(templateLines[templateLineCounter])
                         templateLineCounter += 1
                     
-                    texLines = tex.readlines()
+                    texLines = body.splitlines()
                     foundBegin = False
                     for line in texLines:
                         if line.__contains__("\\PyRopeExercise{"):
@@ -240,7 +224,7 @@ if args.subcommand == 'generate':
                             foundBegin = False
                             break
                         if foundBegin:
-                            resultLines.append(line)
+                            resultLines.append(line + '\n')
                     
                     templateLineCounter += 1
                     while templateLineCounter < templateLines.__len__():
