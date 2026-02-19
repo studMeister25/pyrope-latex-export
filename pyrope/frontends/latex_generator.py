@@ -14,41 +14,31 @@ class LatexGenerator:
         self.solution_cells = []
     
     def generate_cells_of_exercise(self, pexercise):
-        self.exercise_cells.append(nbformat.v4.new_raw_cell('\\PyRopeExercise{'))
-        if self.includes_solution: self.solution_cells.append(nbformat.v4.new_raw_cell('\\PyRopeExercise{'))
+        self.append_raw_cells('\\PyRopeExercise{')
 
         if pexercise.preamble != '':
             preamble = '\n'.join([line.strip() for line in pexercise.preamble.split('\n')])
-            self.exercise_cells.append(nbformat.v4.new_markdown_cell(preamble))
-            if self.includes_solution: self.solution_cells.append(nbformat.v4.new_markdown_cell(preamble))
-        self.exercise_cells.append(nbformat.v4.new_raw_cell('}'))
-        if self.includes_solution: self.solution_cells.append(nbformat.v4.new_raw_cell('}'))
+            self.append_markdown_cells(preamble, None)
+        self.append_raw_cells('}')
 
-        self.exercise_cells.append(nbformat.v4.new_raw_cell('{'))
-        if self.includes_solution: self.solution_cells.append(nbformat.v4.new_raw_cell('{'))
+        self.append_raw_cells('{')
         template = '\n'.join([line.strip() for line in pexercise.model.template.split('\n')])
         
         (template_string_constructor, solution_string_constructor) = self.format_markdown(pexercise, template)
 
-        self.exercise_cells.append(nbformat.v4.new_markdown_cell(template_string_constructor))
-        if self.includes_solution: self.solution_cells.append(nbformat.v4.new_markdown_cell(solution_string_constructor))
+        self.append_markdown_cells(template_string_constructor, solution_string_constructor)
 
         max_hints = min(self.number_of_hints, pexercise.hints.__len__())
 
         for hint_num in range(0, max_hints):
-            self.exercise_cells.append(nbformat.v4.new_raw_cell('\n\\PyRopeHint{'))
-            if self.includes_solution: self.solution_cells.append(nbformat.v4.new_raw_cell('\n\\PyRopeHint{'))
+            self.append_raw_cells('\n\\PyRopeHint{')
             
             (hints_string_constructor, solution_hints_string_constructor) = self.format_markdown(pexercise, pexercise.hints[hint_num])
 
-            self.exercise_cells.append(nbformat.v4.new_markdown_cell(hints_string_constructor))
-            if self.includes_solution: self.solution_cells.append(nbformat.v4.new_markdown_cell(solution_hints_string_constructor))
-
-            self.exercise_cells.append(nbformat.v4.new_raw_cell('}'))
-            if self.includes_solution: self.solution_cells.append(nbformat.v4.new_raw_cell('}'))
+            self.append_markdown_cells(hints_string_constructor, solution_hints_string_constructor)
+            self.append_raw_cells('}')
         
-        self.exercise_cells.append(nbformat.v4.new_raw_cell(f'}}{{{pexercise.max_total_score:g}}}\n'))
-        if self.includes_solution: self.solution_cells.append(nbformat.v4.new_raw_cell(f'}}{{{pexercise.max_total_score:g}}}\n'))
+        self.append_raw_cells(f'}}{{{pexercise.max_total_score:g}}}\n')
 
     def get_notebook_cells(self):
         return (self.exercise_cells, self.solution_cells)
@@ -127,3 +117,16 @@ class LatexGenerator:
                 return f"\\PyRopeTextArea{{{widget.height}}}{{{widget.width}}}"
             case _:
                 return "\\PyRopeText"
+            
+    def append_raw_cells(self, exercise_cell_content):
+        self.exercise_cells.append(nbformat.v4.new_raw_cell(exercise_cell_content))
+        if self.includes_solution: self.solution_cells.append(nbformat.v4.new_raw_cell(exercise_cell_content))
+            
+    def append_markdown_cells(self, exercise_cell_content, solution_cell_content):
+        self.exercise_cells.append(nbformat.v4.new_markdown_cell(exercise_cell_content))
+        if self.includes_solution:
+            if solution_cell_content is None:
+                self.solution_cells.append(nbformat.v4.new_markdown_cell(exercise_cell_content))
+            else:
+                self.solution_cells.append(nbformat.v4.new_markdown_cell(solution_cell_content))
+

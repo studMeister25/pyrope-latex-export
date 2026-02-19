@@ -13,5 +13,6 @@ venv/
 # LaTeX/PDF
 *.aux
 *.log
+*.out
 *.pdf
 *.synctex.gz
