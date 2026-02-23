@@ -72,7 +72,7 @@ if args.subcommand == 'run':
             f'%pyrope run {" ".join(args.filepaths)}'
             f'{" --debug" if args.debug else ""}'
         )
-        nb['exercise_cells'] = [nbformat.v4.new_code_cell(code)]
+        nb['cells'] = [nbformat.v4.new_code_cell(code)]
         nb.metadata['pyrope'] = {'autoexecute': True}
         nb = nbformat.validator.normalize(nb)[1]
         with open(file, 'w') as f:
@@ -156,7 +156,8 @@ if args.subcommand == 'generate':
 
         print(f'\n- File {test_num} of {amount}')
 
-        latex_generator = LatexGenerator(includes_solutions, num_of_hints, notebook_file)
+        # latex_generator = LatexGenerator(includes_solutions, num_of_hints, notebook_file)
+        latex_generator = LatexGenerator(includes_solutions, num_of_hints)
         for exercise in pool:
             pexercise = ParametrizedExercise(exercise)
             latex_generator.generate_cells_of_exercise(pexercise)
@@ -200,6 +201,21 @@ if args.subcommand == 'generate':
             else:
                 templateFile = args.template
 
+            try:
+                with open(templateFile, "r") as template:
+                    if '<<exercises>>' not in template.read():
+                        print("The template does not contain the required <<exercises>> placeholder. Aborted")
+                        os.rmdir(test_path)
+                        sys.exit(1) 
+            except FileNotFoundError as fnfe:
+                print(f"The file {fnfe.filename} was not found.")
+                os.rmdir(test_path)
+                sys.exit(1) 
+            except IOError as ioe:
+                print(f"An error occurred while reading the file {ioe.filename}.")
+                os.rmdir(test_path)
+                sys.exit(1) 
+
             if cycle_num == 1:
                 test_file = f'{test_path}/{test_name}-SOLUTION-{test_num :03d}.tex'
             else:
@@ -236,8 +252,12 @@ if args.subcommand == 'generate':
                 
             except FileNotFoundError as fnfe:
                 print(f"The file {fnfe.filename} was not found.")
+                os.rmdir(test_path)
+                sys.exit(1) 
             except IOError as ioe:
                 print(f"An error occurred while reading the file {ioe.filename}.")
+                os.rmdir(test_path)
+                sys.exit(1) 
             
         if test_num == 1 and not args.template:
             shutil.copytree('assets', test_path + '/assets')

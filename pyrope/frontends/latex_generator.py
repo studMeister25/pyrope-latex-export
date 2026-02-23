@@ -6,10 +6,11 @@ import nbformat
 
 class LatexGenerator:
 
-    def __init__(self, includes_solution, number_of_hints, notebook_file):
+    # def __init__(self, includes_solution, number_of_hints, notebook_file):
+    def __init__(self, includes_solution, number_of_hints):
         self.includes_solution = includes_solution
         self.number_of_hints = number_of_hints
-        self.notebook_file = notebook_file
+    #     self.notebook_file = notebook_file
         self.exercise_cells = []
         self.solution_cells = []
     
@@ -17,13 +18,13 @@ class LatexGenerator:
         self.append_raw_cells('\\PyRopeExercise{')
 
         if pexercise.preamble != '':
-            preamble = '\n'.join([line.strip() for line in pexercise.preamble.split('\n')])
+            preamble = self.remove_whitespace(pexercise.preamble)
             self.append_markdown_cells(preamble, None)
         self.append_raw_cells('}')
 
         self.append_raw_cells('{')
-        template = '\n'.join([line.strip() for line in pexercise.model.template.split('\n')])
         
+        template = self.remove_whitespace(pexercise.model.template)
         (template_string_constructor, solution_string_constructor) = self.format_markdown(pexercise, template)
 
         self.append_markdown_cells(template_string_constructor, solution_string_constructor)
@@ -33,7 +34,8 @@ class LatexGenerator:
         for hint_num in range(0, max_hints):
             self.append_raw_cells('\n\\PyRopeHint{')
             
-            (hints_string_constructor, solution_hints_string_constructor) = self.format_markdown(pexercise, pexercise.hints[hint_num])
+            hint = self.remove_whitespace(pexercise.hints[hint_num])
+            (hints_string_constructor, solution_hints_string_constructor) = self.format_markdown(pexercise, hint)
 
             self.append_markdown_cells(hints_string_constructor, solution_hints_string_constructor)
             self.append_raw_cells('}')
@@ -42,6 +44,9 @@ class LatexGenerator:
 
     def get_notebook_cells(self):
         return (self.exercise_cells, self.solution_cells)
+    
+    def remove_whitespace(self, string_with_whitespace):
+        return '\n'.join([line.strip() for line in string_with_whitespace.split('\n')])
     
     def format_markdown(self, pexercise, markdown_string):
         execise_string_constructor = ''
@@ -104,19 +109,19 @@ class LatexGenerator:
     def toLatex(self, widget):
         match widget.__class__.__name__:
             case 'Checkbox':
-                return "\\PyRopeCheckbox"
+                return r"\PyRopeCheckbox"
             case 'Dropdown':
-                return "\\PyRopeDropdown{" + ";".join(widget.labels) + "}"
+                return r"\PyRopeDropdown{" + ";".join(widget.labels) + "}"
             case 'RadioButtons':
-                return "\\PyRopeRadioButtons{" + ";".join(widget.labels) + "}"
+                return r"\PyRopeRadioButtons{" + ";".join(widget.labels) + "}"
             case 'Slider':
-                return f"\\PyRopeSlider{{{widget.minimum}}}{{{widget.maximum}}}"
+                return fr"\PyRopeSlider{{{widget.minimum}}}{{{widget.maximum}}}"
             case 'Text':
-                return "\\PyRopeText"
+                return r"\PyRopeText"
             case 'TextArea':
-                return f"\\PyRopeTextArea{{{widget.height}}}{{{widget.width}}}"
+                return fr"\PyRopeTextArea{{{widget.height}}}{{{widget.width}}}"
             case _:
-                return "\\PyRopeText"
+                return r"\PyRopeText"
             
     def append_raw_cells(self, exercise_cell_content):
         self.exercise_cells.append(nbformat.v4.new_raw_cell(exercise_cell_content))
