@@ -1,16 +1,12 @@
 from pyrope.formatters import TemplateFormatter
-import sympy
-import re
 
 import nbformat
 
 class LatexGenerator:
 
-    # def __init__(self, includes_solution, number_of_hints, notebook_file):
     def __init__(self, includes_solution, number_of_hints):
         self.includes_solution = includes_solution
         self.number_of_hints = number_of_hints
-    #     self.notebook_file = notebook_file
         self.exercise_cells = []
         self.solution_cells = []
     
@@ -62,29 +58,7 @@ class LatexGenerator:
                 param_value = pexercise.parameters.get(field_name)
                 if format_spec:
                     if format_spec == 'latex':
-                        #try:
-                        print('Latex found:')
-                        print(param_value.__str__())
-                            # print(re.search(fr'{field_name} =*\n',pexercise.source))
-                            # sympy.init_printing()
-                            # print(sympy.latex(f'sympy.{param_value.__str__()}'))
-                            # execise_string_constructor += sympy.latex(f'sympy.{param_value.__str__()}')
-                            # if self.includes_solution: solution_string_constructor += sympy.latex(param_value.__str__())
-                        # except NameError as e:
-                        #     print(e.__traceback__)
-                        #     execise_string_constructor += param_value.__str__()
-                        #     if self.includes_solution: solution_string_constructor += param_value.__str__()
-                            
-                        # print('Latex found:')
-                        # nb = nbformat.v4.new_notebook()
-                        # print(param_value.__str__())
-                        # nb['cells'] = [nbformat.v4.new_code_cell(param_value.__str__())]
-
-                        # nb = nbformat.validator.normalize(nb)[1]
-                        # with open(self.notebook_file, 'w') as f:
-                        #     nbformat.write(nb, f)
-
-                        #TODO special format handling
+                        #TODO evaluate if special format handling is necessary
                         execise_string_constructor += pexercise.parameters.get(field_name).__str__()
                         if self.includes_solution: solution_string_constructor += pexercise.parameters.get(field_name).__str__()
                     else:

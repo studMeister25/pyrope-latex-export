@@ -4,7 +4,6 @@ import subprocess
 import sys
 import unittest
 from uuid import uuid4
-from datetime import datetime
 import shutil
 
 import nbformat
@@ -12,7 +11,6 @@ from nbconvert import LatexExporter
 
 from pyrope import examples, ExercisePool, ExerciseRunner
 from pyrope.core import CLIParser, ParametrizedExercise
-from pyrope.formatters import TemplateFormatter
 from pyrope.frontends import ConsoleFrontend, LatexGenerator
 
 
@@ -124,8 +122,8 @@ if args.subcommand == 'test':
     if not test_result.wasSuccessful():
         sys.exit(1)
 
-if args.subcommand == 'generate':
-    print('Generating LaTeX')
+if args.subcommand == 'convert':
+    print('Converting to LaTeX')
 
     try:
         assert os.path.isdir(args.path)
@@ -145,18 +143,15 @@ if args.subcommand == 'generate':
         sys.exit(1)
 
     notebook_file = 'generator.ipynb'
-    
-    #notebook_file = os.path.join(args.path, 'generator.ipynb')
 
-    amount = args.amount
+    count = args.count
     includes_solutions = args.solutions
     num_of_hints = args.hints
 
-    for test_num in range(1, amount+1):
+    for test_num in range(1, count+1):
 
-        print(f'\n- File {test_num} of {amount}')
+        print(f'\n- File {test_num} of {count}')
 
-        # latex_generator = LatexGenerator(includes_solutions, num_of_hints, notebook_file)
         latex_generator = LatexGenerator(includes_solutions, num_of_hints)
         for exercise in pool:
             pexercise = ParametrizedExercise(exercise)
@@ -179,20 +174,9 @@ if args.subcommand == 'generate':
             nb = nbformat.validator.normalize(nb)[1]
             with open(notebook_file, 'w') as f:
                 nbformat.write(nb, f)
-
-            # widgets = pexercise.model.widgets
-            # parameters = pexercise.parameters
-            # for widget in widgets:
-            #     #print(widget.ifield_name)
-            #     print(widget.toLatex())
-
-            #os.system(f'jupyter nbconvert --to latex {notebook_file} >/dev/null 2>/dev/null')
+            
             latex_exporter = LatexExporter(template_name="latex")
             (body, resources) = latex_exporter.from_notebook_node(nb)
-
-            # texFile = 'generator.tex'
-            # with open(texFile, 'w') as f:
-            #     f.write(body)
 
             print('\tInserting into template')
 
@@ -217,12 +201,11 @@ if args.subcommand == 'generate':
                 sys.exit(1) 
 
             if cycle_num == 1:
-                test_file = f'{test_path}/{test_name}-SOLUTION-{test_num :03d}.tex'
+                test_file = f'{test_path}/{test_name}-{test_num :03d}-SOLUTION.tex'
             else:
                 test_file = f'{test_path}/{test_name}-{test_num :03d}.tex'
 
             try:
-                # with open(texFile, "r") as tex, open(templateFile, "r") as template, open(test_file, "w") as result:
                 with open(templateFile, "r") as template, open(test_file, "w") as result:
                     resultLines = []
                     templateLines = template.readlines()
@@ -262,8 +245,7 @@ if args.subcommand == 'generate':
         if test_num == 1 and not args.template:
             shutil.copytree('assets', test_path + '/assets')
 
-    # try:
-    #     os.remove(notebook_file)
-    #     os.remove(texFile)
-    # except FileNotFoundError:
-    #     pass
+    try:
+        os.remove(notebook_file)
+    except FileNotFoundError:
+        pass
